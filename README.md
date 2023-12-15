@@ -1,6 +1,6 @@
 ## Next.js App Router Course - Starter
 
-### 5 Navigating Between Pages
+### Navigating Between Pages
 
 페이지 사이를 연결하려면 일반적으로 <a> HTML 요소 사용한다.
 <a> 태그를 사용하면 각 페이지를 탐색할때마다 전체 페이지 새로고침이 발생한다.
