@@ -43,3 +43,43 @@ export default function NavLinks() {
   );
 }
 ```
+
+### Fetching Data
+
+```javascript
+const revenue = await fetchRevenue();
+const latestInvoices = await fetchLatestInvoices(); // wait for fetchRevenue() to finish
+const {
+  numberOfInvoices,
+  numberOfCustomers,
+  totalPaidInvoices,
+  totalPendingInvoices,
+} = await fetchCardData(); // wait for fetchLatestInvoices() to finish
+```
+
+위와 같은 코드는 waterfall를 생성한다.
+이런 경우 이전 요청이 완료되어야 다음 요청을 진행할 수 있다.
+이런 패턴은 다음 요청을 하기전에 특정 조건을 충족해야하는경우 필요하다.
+
+waterfall을 방지하는 일반적인 방법은 모든 데이터 요청을 동시에 병렬로 시작하는것이다.
+JavaScript에서는 다음을 사용할 수 있습니다.Promise.all()또는Promise.allSettled()은 모든 Promise를 동시에 시작하는 기능을 한다
+
+```javascript
+export async function fetchCardData() {
+  try {
+    const invoiceCountPromise = sql`SELECT COUNT(*) FROM invoices`;
+    const customerCountPromise = sql`SELECT COUNT(*) FROM customers`;
+    const invoiceStatusPromise = sql`SELECT
+         SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END) AS "paid",
+         SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END) AS "pending"
+         FROM invoices`;
+
+    const data = await Promise.all([
+      invoiceCountPromise,
+      customerCountPromise,
+      invoiceStatusPromise,
+    ]);
+    // ...
+  }
+}
+```
