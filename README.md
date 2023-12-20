@@ -114,3 +114,71 @@ Next.js에서 스트리밍을 구현하는 방법에는 두 가지가 있습니�
 
 1. 페이지 수준에서 loading.tsx 파일을 사용합니다.
 2. 특정 구성요소의 경우 <Suspense>.
+
+## Search
+
+```javascript
+'use client';
+
+import { useSearchParams, usePathname, useRouter } from 'next/navigation';
+
+export default function Search({ placeholder }: { placeholder: string }) {
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const { replace } = useRouter();
+
+  function handleSearch(term: string) {
+    const params = new URLSearchParams(searchParams);
+
+    if (term) {
+      params.set('query', term);
+    } else {
+      params.delete('query');
+    }
+    replace(`${pathname}?${params.toString()}`);
+  }
+
+  return (
+    <div>
+      <input
+        placeholder={placeholder}
+        onChange={(e) => {
+          handleSearch(e.target.value);
+        }}
+        defaultValue={searchParams.get('query')?.toString()}
+      />
+    </div>
+  );
+}
+
+```
+
+${pathname}귀하의 경우 현재 경로입니다 "/dashboard/invoices".
+사용자가 검색창에 입력하면 params.toString()이 입력이 URL 친화적인 형식으로 변환됩니다.
+replace(${pathname}?${params.toString()})사용자의 검색 데이터로 URL을 업데이트합니다. 예를 들어 /dashboard/invoices?query=lee사용자가 "Lee"를 검색하는 경우입니다.
+Next.js의 클라이언트 측 탐색 덕분에 페이지를 다시 로드하지 않고도 URL이 업데이트됩니다.
+
+이때 키를 입력할때마다 URL을 업데이트하므로 키를 누를 때마다 데이터베이스를 쿼리하게 됩니다! 우리 애플리케이션이 작기 때문에 이것은 문제가 되지 않습니다. 그러나 애플리케이션에 수천 명의 사용자가 있고 각 사용자가 키를 누를 때마다 데이터베이스에 새로운 요청을 보내는 경우 문제가 된다.
+
+디바운싱은 함수가 실행될 수 있는 속도를 제한하는 프로그래밍 방식입니다. 우리의 경우에는 사용자가 입력을 중단한 경우에만 데이터베이스를 쿼리하려고 합니다.
+
+npm i use-debounce
+
+디바운싱을 통해 데이터베이스로 전송되는 요청 수를 줄여 리소스를 절약할 수 있습니다.
+
+```javascript
+import { useDebouncedCallback } from 'use-debounce';
+
+// Inside the Search Component...
+const handleSearch = useDebouncedCallback((term) => {
+  console.log(`Searching... ${term}`);
+
+  const params = new URLSearchParams(searchParams);
+  if (term) {
+    params.set('query', term);
+  } else {
+    params.delete('query');
+  }
+  replace(`${pathname}?${params.toString()}`);
+}, 300);
+```
